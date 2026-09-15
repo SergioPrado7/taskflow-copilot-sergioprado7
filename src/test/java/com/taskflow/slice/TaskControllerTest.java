@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.mockito.ArgumentMatchers.any;
@@ -86,6 +87,33 @@ class TaskControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].title").value("Primera"));
+    }
+
+    @Test
+    void getOverdue_retorna200YUnaTarea() throws Exception {
+        LocalDate hoy = LocalDate.now();
+        Task single = new Task(20L, "Antigua", "desc", TaskStatus.IN_PROGRESS, Priority.MED, 1L, 1L, hoy.minusDays(3));
+        when(taskService.vencidas()).thenReturn(List.of(single));
+
+        mockMvc.perform(get("/tasks/overdue"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(20))
+                .andExpect(jsonPath("$[0].title").value("Antigua"));
+    }
+
+    @Test
+    void getUnassigned_retorna200YListaConAssigneeNull() throws Exception {
+        LocalDate hoy = LocalDate.now();
+        Task t4 = new Task(4L, "Escribir tests MockMvc", "desc", TaskStatus.TODO, Priority.MED, 1L, null, hoy.plusDays(7));
+        Task t6 = new Task(6L, "Publicar en la tienda", "desc", TaskStatus.TODO, Priority.MED, 1L, null, hoy.plusDays(10));
+        when(taskService.sinResponsable()).thenReturn(List.of(t4, t6));
+
+        mockMvc.perform(get("/tasks/unassigned"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(4))
+                .andExpect(jsonPath("$[0].assigneeId").value(org.hamcrest.Matchers.nullValue()));
     }
 
     @Test
