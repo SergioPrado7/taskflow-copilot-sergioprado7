@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.mockito.ArgumentMatchers.any;
@@ -86,6 +87,20 @@ class TaskControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].title").value("Primera"));
+    }
+
+    @Test
+    void getOverdue_retorna200YListaEnOrden() throws Exception {
+        LocalDate hoy = LocalDate.now();
+        Task vencidaAntigua = new Task(20L, "Antigua", "desc", TaskStatus.IN_PROGRESS, Priority.MED, 1L, 1L, hoy.minusDays(3));
+        Task vencidaReciente = new Task(21L, "Reciente", "desc", TaskStatus.IN_PROGRESS, Priority.MED, 1L, 1L, hoy.minusDays(1));
+        when(taskService.vencidas()).thenReturn(List.of(vencidaAntigua, vencidaReciente));
+
+        mockMvc.perform(get("/tasks/overdue"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(20))
+                .andExpect(jsonPath("$[1].id").value(21));
     }
 
     @Test
