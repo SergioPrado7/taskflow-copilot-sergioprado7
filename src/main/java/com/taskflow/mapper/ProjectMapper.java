@@ -1,15 +1,15 @@
 package com.taskflow.mapper;
 
 import com.taskflow.dto.ProjectResponse;
+import com.taskflow.dto.ProjectSummaryResponse;
 import com.taskflow.model.Project;
+import com.taskflow.model.TaskStatus;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * ProjectMapper — puente DTO &lt;-&gt; dominio del lado Project. Estático, a mano, sin MapStruct.
- *
- * HOY se SIMPLIFICÓ (lo prometía D3): la entidad ya guarda 'ownerId' directo (se aplanó el 'User
- * owner' en MP-4), así que aResponse ya no deriva el id desde un objeto (p.getOwner().id()) — lee
- * p.getOwnerId() tal cual. El contrato de salida (ProjectResponse con ownerId Long) no cambió; el
- * mapeo se volvió trivial porque el dominio por fin coincide con la forma canónica.
+ * ProjectMapper — puente DTO <-> dominio del lado Project. Estático, a mano, sin MapStruct.
  */
 public final class ProjectMapper {
 
@@ -21,5 +21,15 @@ public final class ProjectMapper {
     public static ProjectResponse aResponse(Project p) {
         return new ProjectResponse(p.getId(), p.getName(), p.getDescription(),
                 p.getOwnerId(), p.getCreatedAt());
+    }
+
+    /** Crea el DTO de resumen del proyecto a partir de los conteos calculados. */
+    public static ProjectSummaryResponse aSummary(Project p, long totalTasks,
+                                                  Map<TaskStatus, Long> byStatusLong, long overdue) {
+        Map<String, Integer> byStatus = new HashMap<>();
+        for (TaskStatus s : TaskStatus.values()) {
+            byStatus.put(s.name(), byStatusLong.getOrDefault(s, 0L).intValue());
+        }
+        return new ProjectSummaryResponse(p.getId(), p.getName(), (int) totalTasks, byStatus, (int) overdue);
     }
 }

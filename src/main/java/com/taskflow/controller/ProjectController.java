@@ -66,6 +66,17 @@ public class ProjectController {
         return ProjectMapper.aResponse(proyecto);
     }
 
+    /** GET /projects/{id}/summary — resumen del proyecto: conteos por estado y vencidas. */
+    @Operation(summary = "Resumen compacto de un proyecto",
+            description = "Devuelve los conteos por estado y cuántas tareas están vencidas. 404 si el proyecto no existe.")
+    @GetMapping("/projects/{id}/summary")
+    public com.taskflow.dto.ProjectSummaryResponse getProjectSummary(@PathVariable("id") Long id) {
+        Project proyecto = projectService.buscarPorId(id)
+                .orElseThrow(() -> new ProjectNotFoundException(id));
+        com.taskflow.service.ProjectSummary resumen = projectService.getSummary(proyecto);
+        return ProjectMapper.aSummary(proyecto, resumen.getTotalTasks(), resumen.getByStatus(), resumen.getOverdue());
+    }
+
     /**
      * GET /projects/{id}/tasks — las tareas de un proyecto como TaskResponse. Conserva la distinción
      * de D2: proyecto inexistente -> 404 (orElseThrow); proyecto sin tareas -> 200 con []. El filtro

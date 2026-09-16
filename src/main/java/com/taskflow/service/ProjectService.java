@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import com.taskflow.model.TaskStatus;
 
 /**
  * ProjectService — la capa de negocio del lado Project. Cero HTTP aquí (el "no existe" se traduce con
@@ -33,12 +35,28 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;   // D5: para resolver el owner desde el username del JWT
-
     public ProjectService(ProjectRepository projectRepository, TaskRepository taskRepository,
-                          UserRepository userRepository) {
-        this.projectRepository = projectRepository;
+                          UserRepository userRepository) {        this.projectRepository = projectRepository;
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
+    }
+
+    /** Resumen compacto de un proyecto: conteos por estado y vencidas. */
+    public ProjectSummary getSummary(Project project) {
+        List<Task> tareas = tareasDe(project.getId());
+        long total = tareas.size();
+        Map<TaskStatus, Long> byStatus = new java.util.EnumMap<>(TaskStatus.class);
+        for (TaskStatus s : TaskStatus.values()) {
+            byStatus.put(s, 0L);
+        }
+        long overdue = 0L;
+        for (Task t : tareas) {
+            byStatus.put(t.getStatus(), byStatus.get(t.getStatus()) + 1);
+            if (t.estaVencida()) {
+                overdue++;
+            }
+        }
+        return new ProjectSummary(total, byStatus, overdue);
     }
 
     /** Todos los proyectos. */
