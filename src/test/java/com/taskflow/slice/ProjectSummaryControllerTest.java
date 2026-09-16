@@ -61,4 +61,22 @@ class ProjectSummaryControllerTest {
         mockMvc.perform(get("/projects/99/summary").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void getSummary_proyectoSinTareas_devuelveCerosEnJSON() throws Exception {
+        Project proyecto3 = new Project(3L, "P3", "d", 1L, null);
+        when(projectService.buscarPorId(3L)).thenReturn(Optional.of(proyecto3));
+        when(projectService.getSummary(proyecto3)).thenReturn(new com.taskflow.service.ProjectSummary(0L, Map.of(
+                TaskStatus.TODO, 0L, TaskStatus.IN_PROGRESS, 0L, TaskStatus.DONE, 0L), 0L));
+
+        mockMvc.perform(get("/projects/3/summary").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.projectId").value(3))
+                .andExpect(jsonPath("$.projectName").value("P3"))
+                .andExpect(jsonPath("$.totalTasks").value(0))
+                .andExpect(jsonPath("$.byStatus.TODO").value(0))
+                .andExpect(jsonPath("$.byStatus.IN_PROGRESS").value(0))
+                .andExpect(jsonPath("$.byStatus.DONE").value(0))
+                .andExpect(jsonPath("$.overdue").value(0));
+    }
 }
